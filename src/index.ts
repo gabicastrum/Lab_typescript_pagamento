@@ -16,7 +16,7 @@ enum BandeiraCartao {
 interface Pagamento {
     valor: number;
     status: StatusPagamento;
-    pagar(): Promise<void>;
+    pagar(): Promise<string>;
     getDetalhes(): any;
     //exibirValor?(): void; //metodo opcional
 }
@@ -32,7 +32,7 @@ abstract class PagamentoBase implements Pagamento {
     }
 
     //metodo abstrato para pagamento - vou implementar nas subclasses (classes filhas)
-    abstract pagar(): Promise<void>;
+    abstract pagar(): Promise<string>;
 
     getDetalhes(): any { //metodo para ser sobrescrito
         return {}
@@ -46,10 +46,11 @@ class PagamentoCartao extends PagamentoBase {
     constructor(valor: number, public bandeira: BandeiraCartao) {
         super(valor);
     }
-    async pagar(): Promise<void> {
+    async pagar(): Promise<string> {
         await new Promise((resolve) => setTimeout(resolve, 500));
         this.status = StatusPagamento.Aprovado;
-        console.log(`Pagamento de R$ ${this.valor.toFixed(2)} realizado com cartão ${BandeiraCartao[this.bandeira]}`);
+        const mensagem = `Pagamento de R$ ${this.valor.toFixed(2)} realizado com cartão ${BandeiraCartao[this.bandeira]}`;
+        return mensagem;
     }
     getDetalhes(): any {
         return {
@@ -67,10 +68,11 @@ class PagamentoBoleto extends PagamentoBase {
         }
     }
     //sobrescrita do metodo abstrato pagar
-    async pagar(): Promise<void> {
+    async pagar(): Promise<string> {
         await new Promise((resolve) => setTimeout(resolve, 500));
         this.status = StatusPagamento.Aprovado;
-        console.log(`Pagamento de R$ ${this.valor.toFixed(2)} realizado com boleto. Código de barras: ${this.codigoBarras}`);
+        const mensagem = `Pagamento de R$ ${this.valor.toFixed(2)} realizado com boleto. Código de barras: ${this.codigoBarras}`;
+        return mensagem;
     }
     getDetalhes(): any {
         return {
@@ -80,7 +82,7 @@ class PagamentoBoleto extends PagamentoBase {
     }
 }
 
-// Exemplos de Uso e Testes 
+// exemplo de uso 
 async function main() {
 
     const cartao = new PagamentoCartao(150, BandeiraCartao.Visa);
