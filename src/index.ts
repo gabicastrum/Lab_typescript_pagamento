@@ -24,20 +24,20 @@ interface Pagamento {
 //classe abstrata direcionada para pagamento com validação e status
 abstract class PagamentoBase implements Pagamento {
     status: StatusPagamento = StatusPagamento.Pendente;
-
     constructor(public valor: number) {
-        if (valor <= 0) { //validando o valor do pagamento
-            throw new Error('Valor do pagamento deve ser maior que zero');
-        }
+        this.validarValorPagamento(valor);
     }
 
     //metodo abstrato para pagamento - vou implementar nas subclasses (classes filhas)
     abstract pagar(): Promise<string>;
 
-    getDetalhes(): any { //metodo para ser sobrescrito
-        return {}
-    }
+    abstract getDetalhes(): any; //metodo para ser sobrescrito
 
+    validarValorPagamento(valor: number) {
+        if (valor <= 0) { //validando o valor do pagamento
+            throw new Error('Valor do pagamento deve ser maior que zero');
+        }
+    }
     //exibirValor(): void { console.log(`Valor a ser pago: R$ ${this.valor.toFixed(2)}`); }
 }
 
@@ -63,9 +63,7 @@ class PagamentoCartao extends PagamentoBase {
 class PagamentoBoleto extends PagamentoBase {
     constructor(valor: number, private codigoBarras: string) {
         super(valor);
-        if (codigoBarras.length < 10) {
-            throw new Error('Código de barras inválido');
-        }
+        this.validarCodigoBarras(codigoBarras);
     }
     //sobrescrita do metodo abstrato pagar
     async pagar(): Promise<string> {
@@ -80,13 +78,19 @@ class PagamentoBoleto extends PagamentoBase {
             codigoBarras: this.codigoBarras
         };
     }
+    validarCodigoBarras(codigoBarras: string) {
+        if (codigoBarras.length > 10) {
+            throw new Error('Código de barras inválido');
+        }
+    }
 }
+
 
 // exemplo de uso 
 async function main() {
 
     const cartao = new PagamentoCartao(150, BandeiraCartao.Visa);
-    const boleto = new PagamentoBoleto(200, "1234567890128"); // Código de barras com mais de 10 dígitos
+    const boleto = new PagamentoBoleto(200, "1234567890"); // Código de barras com mais de 10 dígitos
     const pagamentos: Pagamento[] = [cartao, boleto];
 
     for (const pagamento of pagamentos) {
@@ -99,14 +103,13 @@ async function main() {
         }
     }
 
-
     //teste de erro para boleto
-    const boletoErro = new PagamentoBoleto(50, "1234567896"); // Código de barras com menos de 10 dígitos
-    const boletoErro2 = new PagamentoBoleto(0, "1234567890"); // Valor do boleto menor ou igual a zero
-    const boletoErro3 = new PagamentoBoleto(100, "123456789012345"); // Código de barras com mais de 10 dígitos
+    const boletoErro = new PagamentoBoleto(0, "1234567896");
+    const boletoErro2 = new PagamentoBoleto(200, "1234567890128");
 
     try {
-        await boletoErro.pagar()
+        await boletoErro.pagar() //ele vai quebrar aqui
+        await boletoErro2.pagar()
     } catch (error: any) {
         console.error("Erro de boleto", error.message)
     }
@@ -114,7 +117,3 @@ async function main() {
 }
 
 main();
-
-//Exemplo com objetos literais
-//const pagamentosRapidos: Pagamento[] = [{ valor: 150.0, pagar: () => console.log('Pagamento rápido de 150 reais realizado') }
-//   , { valor: 200.0, pagar: () => console.log('Pagamento rápido de 200 reais realizado') }];
